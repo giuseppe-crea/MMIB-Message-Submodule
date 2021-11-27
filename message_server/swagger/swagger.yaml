@@ -1,0 +1,342 @@
+---
+swagger: "2.0"
+info:
+  description: "Micro-service that provides messages management."
+  version: "1.0.0"
+  title: "Messages"
+host: "virtserver.swaggerhub.com"
+basePath: "/"
+schemes:
+- "http"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /blacklist/{owner}:
+    get:
+      summary: "get the user's blacklist"
+      description: "Get the blacklist of the user.\n"
+      operationId: "get_blacklist"
+      parameters:
+      - name: "owner"
+        in: "path"
+        description: "owner's email"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "the list of blocked email"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+        "404":
+          description: "not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /blacklist:
+    head:
+      summary: "check the user blacklist"
+      description: "Receive a (owner, email), check if email is present in owner's\
+        \ blacklist.\n"
+      operationId: "check_blacklist"
+      parameters:
+      - in: "body"
+        name: "data"
+        description: "(owner, email)"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+    put:
+      summary: "add to user blacklist"
+      description: "Receive a (owner, email), add the email to the owner's blacklist.\n"
+      operationId: "add_blacklist"
+      parameters:
+      - name: "owner"
+        in: "query"
+        description: "owner of the blacklist"
+        required: true
+        type: "string"
+      - name: "email"
+        in: "query"
+        description: "owner of the blacklist"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "owner or email not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+    delete:
+      summary: "remove from user blacklist"
+      description: "Receive a (owner, email), remove the email from the owner's blacklist.\n"
+      operationId: "remove_blacklist"
+      parameters:
+      - name: "owner"
+        in: "query"
+        description: "owner of the blacklist"
+        required: true
+        type: "string"
+      - name: "email"
+        in: "query"
+        description: "owner of the blacklist"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "success"
+        "404":
+          description: "owner or email not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /inbox/{owner}:
+    get:
+      summary: "get the user's inbox"
+      description: "Get the inbox of the users.\n"
+      operationId: "get_inbox"
+      parameters:
+      - name: "owner"
+        in: "path"
+        description: "owner's email"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "list of messages"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Message"
+        "404":
+          description: "not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /outbox/{owner}:
+    get:
+      summary: "get the user's outbox"
+      description: "Get the outbox of the users.\n"
+      operationId: "get_outbox"
+      parameters:
+      - name: "owner"
+        in: "path"
+        description: "owner's email"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "list of messages"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Message"
+        "404":
+          description: "not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /drafts/{owner}:
+    get:
+      summary: "get the user's drafts list"
+      description: "Get the drafts of the users.\n"
+      operationId: "get_drafts"
+      parameters:
+      - name: "owner"
+        in: "path"
+        description: "owner's email"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "list of draft"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Message"
+        "404":
+          description: "not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /draft:
+    post:
+      summary: "create draft"
+      description: "Create a new draft.\n"
+      operationId: "create_draft"
+      parameters:
+      - in: "body"
+        name: "data"
+        description: "draft data"
+        required: true
+        schema:
+          $ref: "#/definitions/Message"
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "invalid input"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+    put:
+      summary: "edit a draft"
+      description: "Edit a draft, the body must contain an id field.\n"
+      operationId: "edit_draft"
+      parameters:
+      - in: "body"
+        name: "data"
+        description: "draft data"
+        required: true
+        schema:
+          $ref: "#/definitions/Draft"
+      responses:
+        "200":
+          description: "success"
+        "400":
+          description: "invalid input"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /draft/{id}:
+    delete:
+      summary: "delete a draft"
+      description: "Create a new draft.\n"
+      operationId: "delete_draft"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "draft id"
+        required: true
+        type: "integer"
+      responses:
+        "200":
+          description: "success"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /message:
+    post:
+      summary: "send a message"
+      description: "Send a message.\n"
+      operationId: "send_message"
+      parameters:
+      - in: "body"
+        name: "data"
+        description: "message data, if an id is present, the message is a pre-existing\
+          \ draft."
+        required: true
+        schema:
+          $ref: "#/definitions/Message"
+      responses:
+        "200":
+          description: "the message id"
+          schema:
+            type: "integer"
+        "404":
+          description: "draft not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+    delete:
+      summary: "delete a message"
+      description: "Hide a message referenced by id to the caller, \nthe mail of the\
+        \ caller is also needed.\n"
+      operationId: "delete_message"
+      parameters:
+      - name: "email"
+        in: "query"
+        description: "email of the requested"
+        required: true
+        type: "string"
+      - name: "id"
+        in: "query"
+        description: "id of the message"
+        required: true
+        type: "integer"
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "unauthorized"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /message/{id}:
+    put:
+      summary: "set as read"
+      description: "Set a message as read\n"
+      operationId: "set_as_read"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "message id"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "success"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+  /withdraw/{id}:
+    delete:
+      summary: "withdraw a message"
+      description: "Withdraw a pending message using lottery points.\n"
+      operationId: "withdraw"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "message id"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "success"
+        "401":
+          description: "unauthorized"
+        "404":
+          description: "not found"
+      x-swagger-router-controller: "message_server.controllers.default_controller"
+definitions:
+  Message:
+    type: "object"
+    required:
+    - "message"
+    - "time"
+    properties:
+      id:
+        type: "integer"
+      sender_mail:
+        type: "string"
+      receiver_mail:
+        type: "string"
+      message:
+        type: "string"
+      time:
+        type: "string"
+      image:
+        type: "string"
+        default: "None"
+    description: "An object representing a message."
+    example:
+      image: "None"
+      receiver_mail: "receiver_mail"
+      id: 0
+      time: "time"
+      message: "message"
+      sender_mail: "sender_mail"
+  Draft:
+    type: "object"
+    required:
+    - "id"
+    properties:
+      id:
+        type: "integer"
+      sender_mail:
+        type: "string"
+      receiver_mail:
+        type: "string"
+      message:
+        type: "string"
+      time:
+        type: "string"
+      image:
+        type: "string"
+        default: "None"
+    description: "An object representing a draft, it is a version of Meessage used\
+      \ for editing."
+    example:
+      image: "None"
+      receiver_mail: "receiver_mail"
+      id: 0
+      time: "time"
+      message: "message"
+      sender_mail: "sender_mail"
