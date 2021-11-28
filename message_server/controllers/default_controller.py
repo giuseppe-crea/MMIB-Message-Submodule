@@ -1,10 +1,16 @@
+import json
+
 import connexion
+import pytz
 import six
 
+from datetime import datetime
 from message_server.models.draft import Draft  # noqa: E501
 from message_server.models.message import Message  # noqa: E501
 from message_server import util
-from message_server.tasks import hello_world
+from message_server.tasks import deliver_message
+import message_server.blacklist as bl
+from message_server.database import Message as DB_Message, db
 
 
 def add_blacklist(owner, email):  # noqa: E501
@@ -61,7 +67,6 @@ def delete_draft(id):  # noqa: E501
 
     :rtype: None
     """
-    hello_world()
     return 'do some magic!'
 
 
@@ -166,15 +171,43 @@ def send_message(data):  # noqa: E501
     """send a message
 
     Send a message.  # noqa: E501
+    receiver_mail is a comma separated list of strings in a string
+    these mails are guaranteed to exist
 
     :param data: message data, if an id is present, the message is a pre-existing draft.
     :type data: dict | bytes
 
     :rtype: int
     """
+    sent = []
     if connexion.request.is_json:
         data = Message.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        time_aware = pytz.timezone('Europe/Rome').localize(datetime.strptime(data.time, '%Y-%m-%d %H:%M:%S'))
+        to_parse = data.receiver_mail.split(',')
+        for address in to_parse:
+            address = address.strip()
+            # image has been saved on volume by the gateway
+            # content filter is checked on read by the gateway
+            message = DB_Message()
+            # check blacklist
+            if bl.is_blacklisted(data.sender_mail, data.receiver_mail):
+                visible_to_receiver = False
+            else:
+                visible_to_receiver = True
+            message.add_message(
+                data.message,
+                data.sender_mail,
+                address,
+                data.time,
+                data.image,
+                1,
+                visible_to_receiver
+            )
+            db.session.add(message)
+            db.session.commit()
+            sent.append(message.get_id())
+            deliver_message.apply_async((message.get_id(),), eta=time_aware)
+    return sent
 
 
 def set_as_read(id):  # noqa: E501

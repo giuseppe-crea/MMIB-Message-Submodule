@@ -225,7 +225,9 @@ paths:
         "200":
           description: "the message id"
           schema:
-            type: "integer"
+            type: "array"
+            items:
+              type: "integer"
         "404":
           description: "draft not found"
       x-swagger-router-controller: "message_server.controllers.default_controller"

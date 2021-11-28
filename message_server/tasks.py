@@ -1,5 +1,7 @@
 from celery import Celery
-from message_server.database import db
+from sqlalchemy.orm.exc import NoResultFound
+
+from message_server.database import db, Message
 
 
 BACKEND = BROKER = 'redis://localhost:6379/0'
@@ -7,15 +9,22 @@ celery = Celery(__name__, backend=BACKEND, broker=BROKER)
 _APP = None
 
 
-def give_context(app):
+def do_task():
     global _APP
-    _APP = app
+    if _APP is None:
+        from message_server.__main__ import main
+        _APP = main().app
 
 
 @celery.task
-def hello_world():
-    if _APP is None:
-        print("Oh no...")
-    else:
-        print("Hello world!")
-    return
+def deliver_message(message_id):
+    do_task()
+    with _APP.app_context():
+        # find the message with that given id
+        try:
+            message = Message().query.filter_by(id=int(message_id)).one()
+            message.status = 2
+            db.session.commit()
+        except NoResultFound:
+            pass  # this means the message was retracted
+    return 0

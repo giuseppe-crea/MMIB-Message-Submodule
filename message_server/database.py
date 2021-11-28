@@ -71,7 +71,7 @@ class Blacklist(db.Model):
     __tablename__ = 'blacklist'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    owner = db.Column(db.Integer, nullable=False)
+    owner = db.Column(db.Unicode(128), nullable=False)
     email = db.Column(db.Unicode(128), nullable=False)
 
     def __init__(self, *args, **kw):
