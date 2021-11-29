@@ -177,36 +177,54 @@ def send_message(data):  # noqa: E501
     :param data: message data, if an id is present, the message is a pre-existing draft.
     :type data: dict | bytes
 
-    :rtype: int
+    :rtype: int array
     """
     sent = []
     if connexion.request.is_json:
         data = Message.from_dict(connexion.request.get_json())  # noqa: E501
-        time_aware = pytz.timezone('Europe/Rome').localize(datetime.strptime(data.time, '%Y-%m-%d %H:%M:%S'))
-        to_parse = data.receiver_mail.split(',')
-        for address in to_parse:
-            address = address.strip()
-            # image has been saved on volume by the gateway
-            # content filter is checked on read by the gateway
-            message = DB_Message()
-            # check blacklist
-            if bl.is_blacklisted(data.sender_mail, data.receiver_mail):
-                visible_to_receiver = False
-            else:
-                visible_to_receiver = True
-            message.add_message(
-                data.message,
-                data.sender_mail,
-                address,
-                data.time,
-                data.image,
-                1,
-                visible_to_receiver
-            )
-            db.session.add(message)
-            db.session.commit()
-            sent.append(message.get_id())
-            deliver_message.apply_async((message.get_id(),), eta=time_aware)
+        time_aware = pytz.timezone('Europe/Rome').localize(
+            datetime.strptime(data.time, '%Y-%m-%d %H:%M:%S')
+        )
+        # give minute precision for message send operation
+        # this will send any message targeted for the current minute instantly
+        minute_precision = datetime.now(
+            pytz.timezone('Europe/Rome')
+        ).replace(second=0, microsecond=0)
+        if time_aware >= minute_precision:
+            # checks on the validity of data.image happen within Message object
+            if data.image_hash is not None and data.image_hash != '' and \
+                    len(data.image_hash) > 10240:
+                return [-1]
+            to_parse = data.receiver_mail.split(',')
+            for address in to_parse:
+                address = address.strip()
+                # image has been saved on volume by the gateway
+                # content filter is checked on read by the gateway
+                message = DB_Message()
+                # check blacklist
+                if bl.is_blacklisted(data.sender_mail, data.receiver_mail):
+                    visible_to_receiver = False
+                else:
+                    visible_to_receiver = True
+                message.add_message(
+                    data.message,
+                    data.sender_mail,
+                    address,
+                    data.time,
+                    data.image,
+                    data.image_hash,
+                    1,
+                    visible_to_receiver
+                )
+                db.session.add(message)
+                db.session.commit()
+                sent.append(message.get_id())
+                deliver_message.apply_async(
+                    (message.get_id(),),
+                    eta=time_aware
+                )
+        else:
+            sent = [-1]
     return sent
 
 

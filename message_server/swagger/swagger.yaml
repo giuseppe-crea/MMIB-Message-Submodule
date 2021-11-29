@@ -306,10 +306,12 @@ definitions:
         type: "string"
       image:
         type: "string"
-        default: "None"
+      image_encoded:
+        type: "string"
     description: "An object representing a message."
     example:
-      image: "None"
+      image: "filename.ext"
+      image_hash: "base 64 encoded image"
       receiver_mail: "receiver_mail"
       id: 0
       time: "time"
@@ -332,11 +334,13 @@ definitions:
         type: "string"
       image:
         type: "string"
-        default: "None"
-    description: "An object representing a draft, it is a version of Meessage used\
+      image_encoded:
+        type: "string"
+    description: "An object representing a draft, it is a version of Message used\
       \ for editing."
     example:
-      image: "None"
+      image: "filename.ext"
+      image_hash: "base 64 encoded image"
       receiver_mail: "receiver_mail"
       id: 0
       time: "time"

@@ -11,8 +11,10 @@ class Message(db.Model):
     receiver_email = db.Column(db.Unicode(1028), nullable=False)
     message = db.Column(db.Unicode(1024), nullable=False)
     # for ease of use with Celery, we import this as string
+    # format: "%Y-%M-%D %H:%M:%s" on GMT+1
     time = db.Column(db.Unicode(128), nullable=False)
     image = db.Column(db.Unicode(1024), nullable=False)
+    image_hash = db.Column(db.Unicode(10240), nullable=False)
     # 0 draft, 1 sent, 2 delivered
     status = db.Column(db.Integer, nullable=False)
     # two columns: visible to sender, visible to receiver, for deletion
@@ -25,7 +27,7 @@ class Message(db.Model):
         super(Message, self).__init__(*args, **kw)
 
     def add_message(self, message, sender_email, receiver_email, time, image,
-                    status, visible_to_receiver=True):
+                    image_hash, status, visible_to_receiver=True):
         """
         adds a message to database, initializing to empty all missing fields
         """
@@ -42,10 +44,12 @@ class Message(db.Model):
             self.time = time
         else:
             self.time = ''
-        if image is not None:
+        if image is not None and image != '':
             self.image = image
+            self.image_hash = image_hash
         else:
             self.image = ''
+            self.image_hash = ''
         self.status = status
         self.visible_to_sender = True
         if not visible_to_receiver:

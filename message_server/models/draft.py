@@ -15,7 +15,10 @@ class Draft(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, id: int=None, sender_mail: str=None, receiver_mail: str=None, message: str=None, time: str=None, image: str='None'):  # noqa: E501
+    def __init__(self, id: int=None, sender_mail: str=None,
+                 receiver_mail: str=None, message: str=None,
+                 time: str=None, image: str=None,
+                 image_hash: str=None):  # noqa: E501
         """Draft - a model defined in Swagger
 
         :param id: The id of this Draft.  # noqa: E501
@@ -30,6 +33,8 @@ class Draft(Model):
         :type time: str
         :param image: The image of this Draft.  # noqa: E501
         :type image: str
+        :param image_hash: The base64 encoding of the image file
+        :type image_hash: str
         """
         self.swagger_types = {
             'id': int,
@@ -37,7 +42,8 @@ class Draft(Model):
             'receiver_mail': str,
             'message': str,
             'time': str,
-            'image': str
+            'image': str,
+            'image_hash': str
         }
 
         self.attribute_map = {
@@ -46,7 +52,8 @@ class Draft(Model):
             'receiver_mail': 'receiver_mail',
             'message': 'message',
             'time': 'time',
-            'image': 'image'
+            'image': 'image',
+            'image_hash': 'image_hash'
         }
 
         self._id = id
@@ -55,6 +62,7 @@ class Draft(Model):
         self._message = message
         self._time = time
         self._image = image
+        self._image_hash = image_hash
 
     @classmethod
     def from_dict(cls, dikt) -> 'Draft':
@@ -194,3 +202,24 @@ class Draft(Model):
         """
 
         self._image = image
+
+    @property
+    def image_hash(self) -> str:
+        """Gets the image_hash of this Draft.
+
+
+        :return: The image_hash of this Draft.
+        :rtype: str
+        """
+        return self._image_hash
+
+    @image_hash.setter
+    def image_hash(self, image_hash: str):
+        """Sets the image_hash of this Draft.
+
+
+        :param image_hash: The image_hash of this Draft.
+        :type image_hash: str
+        """
+
+        self._image_hash = image_hash
