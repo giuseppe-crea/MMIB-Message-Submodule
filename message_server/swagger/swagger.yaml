@@ -41,12 +41,16 @@ paths:
         \ blacklist.\n"
       operationId: "check_blacklist"
       parameters:
-      - in: "body"
-        name: "data"
-        description: "(owner, email)"
+      - name: "owner"
+        in: "query"
+        description: "owner of the blacklist"
         required: true
-        schema:
-          type: "string"
+        type: "string"
+      - name: "email"
+        in: "query"
+        description: "address to check"
+        required: true
+        type: "string"
       responses:
         "200":
           description: "success"
@@ -65,14 +69,12 @@ paths:
         type: "string"
       - name: "email"
         in: "query"
-        description: "owner of the blacklist"
+        description: "address to check"
         required: true
         type: "string"
       responses:
         "200":
           description: "success"
-        "404":
-          description: "owner or email not found"
       x-swagger-router-controller: "message_server.controllers.default_controller"
     delete:
       summary: "remove from user blacklist"
@@ -196,7 +198,7 @@ paths:
   /draft/{id}:
     delete:
       summary: "delete a draft"
-      description: "Create a new draft.\n"
+      description: "Delete a draft.\n"
       operationId: "delete_draft"
       parameters:
       - name: "id"

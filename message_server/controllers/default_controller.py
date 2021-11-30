@@ -1,10 +1,12 @@
-import json
-
 import connexion
 import pytz
 import six
 
 from datetime import datetime
+
+from flask import jsonify
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+
 from message_server.models.draft import Draft  # noqa: E501
 from message_server.models.message import Message  # noqa: E501
 from message_server import util
@@ -20,25 +22,31 @@ def add_blacklist(owner, email):  # noqa: E501
 
     :param owner: owner of the blacklist
     :type owner: str
-    :param email: owner of the blacklist
+    :param email: address to check
     :type email: str
 
     :rtype: None
     """
-    return 'do some magic!'
+    bl.add2blacklist_local(owner, email)
+    return 200
 
 
-def check_blacklist(data):  # noqa: E501
+def check_blacklist(owner, email):  # noqa: E501
     """check the user blacklist
 
     Receive a (owner, email), check if email is present in owner&#39;s blacklist.  # noqa: E501
 
-    :param data: (owner, email)
-    :type data: str
+    :param owner: owner of the blacklist
+    :type owner: str
+    :param email: address to check
+    :type email: str
 
     :rtype: None
     """
-    return 'do some magic!'
+    if bl.is_blacklisted(email, owner):
+        return 200
+    else:
+        return 404
 
 
 def create_draft(data):  # noqa: E501
@@ -53,21 +61,42 @@ def create_draft(data):  # noqa: E501
     """
     if connexion.request.is_json:
         data = Message.from_dict(connexion.request.get_json())  # noqa: E501
-
-    return 'do some magic!'
+        if data.image_hash is not None and data.image_hash != '' and \
+                len(data.image_hash) > 10240:
+            return 400
+        address = data.receiver_mail
+        message = DB_Message()
+        message.add_message(
+            data.message,
+            data.sender_mail,
+            address,
+            data.time,
+            data.image,
+            data.image_hash,
+            1,
+            True
+        )
+        db.session.add(message)
+        db.session.commit()
+        return 200
+    else:
+        return 400
 
 
 def delete_draft(id):  # noqa: E501
     """delete a draft
 
-    Create a new draft.  # noqa: E501
+    Deletes a draft.  # noqa: E501
 
     :param id: draft id
     :type id: int
 
     :rtype: None
     """
-    return 'do some magic!'
+    DB_Message.query.filter_by(id=id).delete()
+    db.session.commit()
+
+    return 200
 
 
 def delete_message(email, id):  # noqa: E501
@@ -82,7 +111,16 @@ def delete_message(email, id):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    message = DB_Message.query.filter_by(id=id)
+    if message.receiver_mail == email:
+        from message_server.delete import delete_for_receiver
+        delete_for_receiver(message)
+    elif message.sender_mail == email:
+        from message_server.delete import delete_for_sender
+        delete_for_sender(message)
+    else:
+        return 400
+    return 200
 
 
 def edit_draft(data):  # noqa: E501
@@ -97,7 +135,29 @@ def edit_draft(data):  # noqa: E501
     """
     if connexion.request.is_json:
         data = Draft.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+        # always true
+        if data.id is not None:
+            try:
+                message = DB_Message.query.filter_by(id=id).one()
+            except NoResultFound:
+                return 400
+            if data.image_hash is not None and data.image_hash != '' and \
+                    len(data.image_hash) > 10240:
+                return 400
+            message.add_message(
+                data.message,
+                data.sender_mail,
+                data.receiver_mail,
+                data.time,
+                data.image,
+                data.image_hash,
+                0,
+                True
+            )
+            db.session.commit()
+        else:
+            return 400
+    return 200
 
 
 def get_blacklist(owner):  # noqa: E501
@@ -110,7 +170,30 @@ def get_blacklist(owner):  # noqa: E501
 
     :rtype: List[str]
     """
-    return 'do some magic!'
+    ret_list = bl.blacklist_for_user(owner)
+    if len(ret_list) > 0:
+        return jsonify(ret_list)
+    else:
+        return 404
+
+
+def query_wrangler(query):
+    reply = []
+    if query is None:
+        return 404
+    else:
+        for row in query:
+            reply_row = Message(
+                row.id,
+                row.sender_mail,
+                row.receiver_mail,
+                row.message,
+                row.time,
+                row.image,
+                row.image_hash
+            )
+            reply.append(reply_row)
+        return jsonify(reply)
 
 
 def get_drafts(owner):  # noqa: E501
@@ -123,7 +206,13 @@ def get_drafts(owner):  # noqa: E501
 
     :rtype: List[Message]
     """
-    return 'do some magic!'
+    drafts = db.session.query(
+        DB_Message.query.filter(
+            DB_Message.sender_email == owner,
+            DB_Message.status == 0
+        )
+    )
+    return query_wrangler(drafts)
 
 
 def get_inbox(owner):  # noqa: E501
@@ -136,7 +225,14 @@ def get_inbox(owner):  # noqa: E501
 
     :rtype: List[Message]
     """
-    return 'do some magic!'
+    inbox = db.session.query(
+        DB_Message.query.filter(
+            DB_Message.receiver_email == owner,
+            DB_Message.status == 2,
+            DB_Message.visible_to_receiver
+        )
+    )
+    return query_wrangler(inbox)
 
 
 def get_outbox(owner):  # noqa: E501
@@ -149,7 +245,14 @@ def get_outbox(owner):  # noqa: E501
 
     :rtype: List[Message]
     """
-    return 'do some magic!'
+    outbox = db.session.query(
+        DB_Message.query.filter(
+            DB_Message.sender_email == owner,
+            DB_Message.status == (1 or 2),
+            DB_Message.visible_to_sender
+        )
+    )
+    return query_wrangler(outbox)
 
 
 def remove_blacklist(owner, email):  # noqa: E501
@@ -164,7 +267,7 @@ def remove_blacklist(owner, email):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    return bl.remove_from_blacklist(owner, email)
 
 
 def send_message(data):  # noqa: E501
@@ -238,7 +341,14 @@ def set_as_read(id):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    id = int(id)
+    try:
+        message = DB_Message.query.filter_by(id=id).one()
+    except NoResultFound:
+        return 404
+    message.is_read = True
+    db.session.commit()
+    return 200
 
 
 def withdraw(id):  # noqa: E501
@@ -251,4 +361,11 @@ def withdraw(id):  # noqa: E501
 
     :rtype: None
     """
-    return 'do some magic!'
+    id = int(id)
+    try:
+        message = DB_Message.query.filter_by(id=id).one()
+    except NoResultFound:
+        return 404
+    db.session.delete(message)
+    db.session.commit()
+    return 200

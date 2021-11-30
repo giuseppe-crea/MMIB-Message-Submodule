@@ -1,4 +1,6 @@
 # some checks for the add functionality
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+
 from message_server.database import Blacklist, db
 
 
@@ -32,3 +34,27 @@ def is_blacklisted(sender, receiver):
         Blacklist.query.filter(
             Blacklist.email == sender,
             Blacklist.owner == receiver).exists()).scalar()
+
+
+def blacklist_for_user(owner):
+    receivers = db.session.query(
+        Blacklist.query.filter(Blacklist.owner == owner)
+    )
+    total_receivers = []
+    for row in receivers:
+        total_receivers.append(row.email)
+    return total_receivers
+
+
+def remove_from_blacklist(owner, email):
+    try:
+        query = db.session.query(
+            Blacklist.query.filter(Blacklist.owner == owner,
+                                   Blacklist.email == email)
+        )
+    except NoResultFound:
+        return 404
+    db.session.delete(query)
+    db.session.commit()
+    return 200
+
