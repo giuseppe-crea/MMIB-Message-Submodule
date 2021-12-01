@@ -21,7 +21,7 @@ class TestDefaultController(BaseTestCase):
         query_string = [('owner', 'owner_example'),
                         ('email', 'email_example')]
         response = self.client.open(
-            '//blacklist',
+            '/blacklist',
             method='PUT',
             content_type='application/json',
             query_string=query_string)
@@ -35,7 +35,7 @@ class TestDefaultController(BaseTestCase):
         """
         data = 'data_example'
         response = self.client.open(
-            '//blacklist',
+            '/blacklist',
             method='HEAD',
             data=json.dumps(data),
             content_type='application/json')
@@ -49,7 +49,7 @@ class TestDefaultController(BaseTestCase):
         """
         data = Message()
         response = self.client.open(
-            '//draft',
+            '/draft',
             method='POST',
             data=json.dumps(data),
             content_type='application/json')
@@ -62,7 +62,7 @@ class TestDefaultController(BaseTestCase):
         delete a draft
         """
         response = self.client.open(
-            '//draft/{id}'.format(id=56),
+            '/draft/{id}'.format(id=56),
             method='DELETE',
             content_type='application/json')
         self.assert200(response,
@@ -76,7 +76,7 @@ class TestDefaultController(BaseTestCase):
         query_string = [('email', 'email_example'),
                         ('id', 56)]
         response = self.client.open(
-            '//message',
+            '/message',
             method='DELETE',
             content_type='application/json',
             query_string=query_string)
@@ -90,7 +90,7 @@ class TestDefaultController(BaseTestCase):
         """
         data = Draft()
         response = self.client.open(
-            '//draft',
+            '/draft',
             method='PUT',
             data=json.dumps(data),
             content_type='application/json')
@@ -103,7 +103,7 @@ class TestDefaultController(BaseTestCase):
         get the user's blacklist
         """
         response = self.client.open(
-            '//blacklist/{owner}'.format(owner='owner_example'),
+            '/blacklist/{owner}'.format(owner='owner_example'),
             method='GET',
             content_type='application/json')
         self.assert200(response,
@@ -115,7 +115,7 @@ class TestDefaultController(BaseTestCase):
         get the user's drafts list
         """
         response = self.client.open(
-            '//drafts/{owner}'.format(owner='owner_example'),
+            '/drafts/{owner}'.format(owner='owner_example'),
             method='GET',
             content_type='application/json')
         self.assert200(response,
@@ -127,7 +127,7 @@ class TestDefaultController(BaseTestCase):
         get the user's inbox
         """
         response = self.client.open(
-            '//inbox/{owner}'.format(owner='owner_example'),
+            '/inbox/{owner}'.format(owner='owner_example'),
             method='GET',
             content_type='application/json')
         self.assert200(response,
@@ -139,7 +139,7 @@ class TestDefaultController(BaseTestCase):
         get the user's outbox
         """
         response = self.client.open(
-            '//outbox/{owner}'.format(owner='owner_example'),
+            '/outbox/{owner}'.format(owner='owner_example'),
             method='GET',
             content_type='application/json')
         self.assert200(response,
@@ -153,7 +153,7 @@ class TestDefaultController(BaseTestCase):
         query_string = [('owner', 'owner_example'),
                         ('email', 'email_example')]
         response = self.client.open(
-            '//blacklist',
+            '/blacklist',
             method='DELETE',
             content_type='application/json',
             query_string=query_string)
@@ -167,7 +167,7 @@ class TestDefaultController(BaseTestCase):
         """
         data = Message()
         response = self.client.open(
-            '//message',
+            '/message',
             method='POST',
             data=json.dumps(data),
             content_type='application/json')
@@ -180,7 +180,7 @@ class TestDefaultController(BaseTestCase):
         set as read
         """
         response = self.client.open(
-            '//message/{id}'.format(id='id_example'),
+            '/message/{id}'.format(id='id_example'),
             method='PUT',
             content_type='application/json')
         self.assert200(response,
@@ -192,7 +192,7 @@ class TestDefaultController(BaseTestCase):
         withdraw a message
         """
         response = self.client.open(
-            '//withdraw/{id}'.format(id='id_example'),
+            '/withdraw/{id}'.format(id='id_example'),
             method='DELETE',
             content_type='application/json')
         self.assert200(response,

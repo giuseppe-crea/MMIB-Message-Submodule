@@ -16,8 +16,8 @@ def _check_itself(user, email):
 
 
 def _check_add_blacklist(user, email):
-    return not (_check_already_blocked(user, email) or
-                _check_itself(user, email))
+    return not _check_already_blocked(user, email) or \
+           not _check_itself(user, email)
 
 
 def add2blacklist_local(user, email):

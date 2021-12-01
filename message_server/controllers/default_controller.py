@@ -28,7 +28,7 @@ def add_blacklist(owner, email):  # noqa: E501
     :rtype: None
     """
     bl.add2blacklist_local(owner, email)
-    return 200
+    return None, 200
 
 
 def check_blacklist(owner, email):  # noqa: E501
@@ -44,9 +44,9 @@ def check_blacklist(owner, email):  # noqa: E501
     :rtype: None
     """
     if bl.is_blacklisted(email, owner):
-        return 200
+        return None, 200
     else:
-        return 404
+        return None, 404
 
 
 def create_draft(data):  # noqa: E501
@@ -78,9 +78,9 @@ def create_draft(data):  # noqa: E501
         )
         db.session.add(message)
         db.session.commit()
-        return 200
+        return None, 200
     else:
-        return 400
+        return None, 400
 
 
 def delete_draft(id):  # noqa: E501
@@ -96,7 +96,7 @@ def delete_draft(id):  # noqa: E501
     DB_Message.query.filter_by(id=id).delete()
     db.session.commit()
 
-    return 200
+    return None, 200
 
 
 def delete_message(email, id):  # noqa: E501
@@ -119,8 +119,8 @@ def delete_message(email, id):  # noqa: E501
         from message_server.delete import delete_for_sender
         delete_for_sender(message)
     else:
-        return 400
-    return 200
+        return None, 400
+    return None, 200
 
 
 def edit_draft(data):  # noqa: E501
@@ -140,10 +140,10 @@ def edit_draft(data):  # noqa: E501
             try:
                 message = DB_Message.query.filter_by(id=id).one()
             except NoResultFound:
-                return 400
+                return None, 400
             if data.image_hash is not None and data.image_hash != '' and \
                     len(data.image_hash) > 10240:
-                return 400
+                return None, 400
             message.add_message(
                 data.message,
                 data.sender_mail,
@@ -156,8 +156,8 @@ def edit_draft(data):  # noqa: E501
             )
             db.session.commit()
         else:
-            return 400
-    return 200
+            return None, 400
+    return None, 200
 
 
 def get_blacklist(owner):  # noqa: E501
@@ -174,13 +174,13 @@ def get_blacklist(owner):  # noqa: E501
     if len(ret_list) > 0:
         return jsonify(ret_list)
     else:
-        return 404
+        return None, 404
 
 
 def query_wrangler(query):
     reply = []
     if query is None:
-        return 404
+        return None, 404
     else:
         for row in query:
             reply_row = Message(
@@ -345,10 +345,10 @@ def set_as_read(id):  # noqa: E501
     try:
         message = DB_Message.query.filter_by(id=id).one()
     except NoResultFound:
-        return 404
+        return None, 404
     message.is_read = True
     db.session.commit()
-    return 200
+    return None, 200
 
 
 def withdraw(id):  # noqa: E501
@@ -365,7 +365,7 @@ def withdraw(id):  # noqa: E501
     try:
         message = DB_Message.query.filter_by(id=id).one()
     except NoResultFound:
-        return 404
+        return None, 404
     db.session.delete(message)
     db.session.commit()
-    return 200
+    return None, 200
