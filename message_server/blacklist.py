@@ -37,12 +37,14 @@ def is_blacklisted(sender, receiver):
 
 
 def blacklist_for_user(owner):
-    receivers = db.session.query(
-        Blacklist.query.filter(Blacklist.owner == owner)
-    )
+    try:
+        receivers = Blacklist.query.filter(Blacklist.owner == owner)
+    except NoResultFound:
+        return []
     total_receivers = []
-    for row in receivers:
-        total_receivers.append(row.email)
+    if receivers is not None:
+        for row in receivers:
+            total_receivers.append(row.email)
     return total_receivers
 
 
@@ -57,4 +59,3 @@ def remove_from_blacklist(owner, email):
     db.session.delete(query)
     db.session.commit()
     return 200
-

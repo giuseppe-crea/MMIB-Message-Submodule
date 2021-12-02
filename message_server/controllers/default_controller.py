@@ -63,17 +63,16 @@ def create_draft(data):  # noqa: E501
         data = Message.from_dict(connexion.request.get_json())  # noqa: E501
         if data.image_hash is not None and data.image_hash != '' and \
                 len(data.image_hash) > 10240:
-            return 400
-        address = data.receiver_mail
+            return None, 400
         message = DB_Message()
         message.add_message(
             data.message,
             data.sender_mail,
-            address,
+            data.receiver_mail,
             data.time,
             data.image,
             data.image_hash,
-            1,
+            0,
             True
         )
         db.session.add(message)
@@ -111,11 +110,15 @@ def delete_message(email, id):  # noqa: E501
 
     :rtype: None
     """
-    message = DB_Message.query.filter_by(id=id)
-    if message.receiver_mail == email:
+    try:
+        message = DB_Message.query.filter_by(id=id).one()
+    except NoResultFound:
+        return None, 400
+    # print(message.receiver_mail)
+    if message.receiver_email == email:
         from message_server.delete import delete_for_receiver
         delete_for_receiver(message)
-    elif message.sender_mail == email:
+    elif message.sender_email == email:
         from message_server.delete import delete_for_sender
         delete_for_sender(message)
     else:
@@ -127,6 +130,7 @@ def edit_draft(data):  # noqa: E501
     """edit a draft
 
     Edit a draft, the body must contain an id field.  # noqa: E501
+    ALL FIELDS WILL BE REPLACED
 
     :param data: draft data
     :type data: dict | bytes
@@ -138,7 +142,10 @@ def edit_draft(data):  # noqa: E501
         # always true
         if data.id is not None:
             try:
-                message = DB_Message.query.filter_by(id=id).one()
+                message = DB_Message.query.filter_by(
+                    id=data.id,
+                    status=0
+                ).one()
             except NoResultFound:
                 return None, 400
             if data.image_hash is not None and data.image_hash != '' and \
@@ -180,13 +187,13 @@ def get_blacklist(owner):  # noqa: E501
 def query_wrangler(query):
     reply = []
     if query is None:
-        return None, 404
+        return None, 200
     else:
         for row in query:
             reply_row = Message(
                 row.id,
-                row.sender_mail,
-                row.receiver_mail,
+                row.sender_email,
+                row.receiver_email,
                 row.message,
                 row.time,
                 row.image,
@@ -206,12 +213,7 @@ def get_drafts(owner):  # noqa: E501
 
     :rtype: List[Message]
     """
-    drafts = db.session.query(
-        DB_Message.query.filter(
-            DB_Message.sender_email == owner,
-            DB_Message.status == 0
-        )
-    )
+    drafts = DB_Message.query.filter_by(sender_email=owner, status=0)
     return query_wrangler(drafts)
 
 
@@ -225,12 +227,10 @@ def get_inbox(owner):  # noqa: E501
 
     :rtype: List[Message]
     """
-    inbox = db.session.query(
-        DB_Message.query.filter(
-            DB_Message.receiver_email == owner,
-            DB_Message.status == 2,
-            DB_Message.visible_to_receiver
-        )
+    inbox = DB_Message.query.filter_by(
+        receiver_email=owner,
+        status=2,
+        visible_to_receiver=True
     )
     return query_wrangler(inbox)
 
@@ -245,13 +245,11 @@ def get_outbox(owner):  # noqa: E501
 
     :rtype: List[Message]
     """
-    outbox = db.session.query(
-        DB_Message.query.filter(
-            DB_Message.sender_email == owner,
-            DB_Message.status == (1 or 2),
-            DB_Message.visible_to_sender
-        )
-    )
+    outbox = DB_Message.query.filter(
+        DB_Message.sender_email == owner,
+        DB_Message.status.in_([1, 2]),
+        DB_Message.visible_to_sender
+    ).all()
     return query_wrangler(outbox)
 
 
