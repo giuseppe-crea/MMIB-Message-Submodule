@@ -50,12 +50,12 @@ def blacklist_for_user(owner):
 
 def remove_from_blacklist(owner, email):
     try:
-        query = db.session.query(
-            Blacklist.query.filter(Blacklist.owner == owner,
-                                   Blacklist.email == email)
-        )
+        query = Blacklist.query.filter(
+            Blacklist.owner == owner,
+            Blacklist.email == email
+        ).one()
     except NoResultFound:
-        return 404
+        return None, 404
     db.session.delete(query)
     db.session.commit()
-    return 200
+    return None, 200

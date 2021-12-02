@@ -388,8 +388,24 @@ class TestDefaultController(BaseTestCase):
 
         remove from user blacklist
         """
+        # remove a non-existing entry
         query_string = [('owner', 'owner_example'),
-                        ('email', 'email_example')]
+                        ('email', 'blocked_ex')]
+        response = self.client.open(
+            '/blacklist',
+            method='DELETE',
+            content_type='application/json',
+            query_string=query_string)
+        self.assert404(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # now add a test entry
+        new_blacklist_element = Blacklist()
+        new_blacklist_element.add_blocked_user("owner_example", "blocked_ex")
+        db.session.add(new_blacklist_element)
+        db.session.commit()
+        # remove it
+        query_string = [('owner', 'owner_example'),
+                        ('email', 'blocked_ex')]
         response = self.client.open(
             '/blacklist',
             method='DELETE',
@@ -434,29 +450,83 @@ class TestDefaultController(BaseTestCase):
             query_msg = DB_Message.query.filter_by(id=id).one()
             # assert it's been delivered
             assert query_msg.status == 2
+            db.session.delete(query_msg)
+        db.session.commit()
 
     def test_set_as_read(self):
         """Test case for set_as_read
 
         set as read
         """
+        # test for non-existing message
         response = self.client.open(
-            '/message/{id}'.format(id='id_example'),
+            '/message/{id}'.format(id='99'),
+            method='PUT',
+            content_type='application/json')
+        self.assert404(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # create a message
+        dummy_msg = DB_Message()
+        dummy_msg.add_message(
+            "dummy delete message",
+            "sender@example.com",
+            "receiver@example.com",
+            "2025-01-01 12:00:00",
+            None,
+            None,
+            2,
+            True
+        )
+        db.session.add(dummy_msg)
+        db.session.commit()
+        dummy_id = dummy_msg.get_id()
+        response = self.client.open(
+            '/message/{id}'.format(id=dummy_id),
             method='PUT',
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
+        requeue_dummy_message = DB_Message.query.filter_by(id=dummy_id).first()
+        assert requeue_dummy_message is not None
+        assert requeue_dummy_message.is_read
+        db.session.delete(dummy_msg)
+        db.session.commit()
 
     def test_withdraw(self):
         """Test case for withdraw
 
         withdraw a message
         """
+        dummy_msg = DB_Message()
+        dummy_msg.add_message(
+            "dummy delete message",
+            "sender@example.com",
+            "receiver@example.com",
+            "2025-01-01 12:00:00",
+            None,
+            None,
+            2,
+            True
+        )
+        db.session.add(dummy_msg)
+        db.session.commit()
+        dummy_id = dummy_msg.get_id()
+        # make sure it's there
+        assert DB_Message.query.filter_by(id=dummy_id).first() is not None
         response = self.client.open(
-            '/withdraw/{id}'.format(id='id_example'),
+            '/withdraw/{id}'.format(id=dummy_id),
             method='DELETE',
             content_type='application/json')
         self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # make sure it's not there anymore
+        assert DB_Message.query.filter_by(id=dummy_id).first() is None
+        # test the withdrawal of a non-existing message id
+        response = self.client.open(
+            '/withdraw/{id}'.format(id='99'),
+            method='DELETE',
+            content_type='application/json')
+        self.assert404(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
 
