@@ -30,14 +30,27 @@ class TestDefaultController(BaseTestCase):
             query_string=query_string)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
+        query = Blacklist.query.filter_by(
+            owner='owner@example.com',
+            email='email@example.com'
+        ).first()
+        assert query is not None
+        db.session.delete(query)
+        db.session.commit()
 
     def test_check_blacklist(self):
         """Test case for check_blacklist
 
         check the user blacklist
         """
-        # add a pair, if the pair already exists this still returns 200
-        self.test_add_blacklist()
+        # add a pair
+        new_blacklist_element = Blacklist()
+        new_blacklist_element.add_blocked_user(
+            'owner@example.com',
+            'email@example.com'
+        )
+        db.session.add(new_blacklist_element)
+        db.session.commit()
         # check for the pair we just added
         query_string = [('owner', 'owner@example.com'),
                         ('email', 'email@example.com')]
@@ -58,6 +71,8 @@ class TestDefaultController(BaseTestCase):
             query_string=query_string)
         self.assert404(response,
                        'Response body is : ' + response.data.decode('utf-8'))
+        db.session.delete(new_blacklist_element)
+        db.session.commit()
 
     def test_create_draft(self):
         """Test case for create_draft
@@ -103,23 +118,35 @@ class TestDefaultController(BaseTestCase):
             content_type='application/json')
         self.assert400(response,
                        'Response body is : ' + response.data.decode('utf-8'))
+        db.session.delete(saved_draft)
+        db.session.commit()
 
     def test_delete_draft(self):
         """Test case for delete_draft
 
         delete a draft
         """
-        draft_msg = DB_Message.query.filter_by(status=0).first()
-        if draft_msg is None:
-            self.test_create_draft()
-            draft_msg = DB_Message.query.filter_by(status=0).first()
-        id = draft_msg.id
+        dummy_msg = DB_Message()
+        dummy_msg.add_message(
+            "dummy draft to edit",
+            "sender@example.com",
+            "receiver@example.com",
+            "2025-01-01 12:00:00",
+            "test_name",
+            "test_base64_value",
+            0,
+            True
+        )
+        db.session.add(dummy_msg)
+        db.session.commit()
+        dummy_id = dummy_msg.get_id()
         response = self.client.open(
-            '/draft/{id}'.format(id=id),
+            '/draft/{id}'.format(id=dummy_id),
             method='DELETE',
             content_type='application/json')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
+        assert (DB_Message.query.filter_by(id=dummy_id).first() is None)
         # now check a random id, the draft shouldn't exist
         id = 18  # chosen by fair dice roll. guaranteed to be random.
         assert (DB_Message.query.filter_by(id=id).first() is None)
@@ -234,9 +261,10 @@ class TestDefaultController(BaseTestCase):
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
         # check that the message was actually edited
-        assert DB_Message.query.filter_by(
-            id=dummy_id
-        ).first().message == data.message
+        draft = DB_Message.query.filter_by(id=dummy_id).first()
+        assert draft.message == data.message
+        db.session.delete(draft)
+        db.session.commit()
 
     def test_get_blacklist(self):
         """Test case for get_blacklist
