@@ -21,6 +21,22 @@ class TestDefaultController(BaseTestCase):
 
         add to user blacklist
         """
+        # try and add self
+        query_string = [('owner', 'owner@example.com'),
+                        ('email', 'owner@example.com')]
+        response = self.client.open(
+            '/blacklist',
+            method='PUT',
+            content_type='application/json',
+            query_string=query_string)
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # make sure there's no actual addition
+        blacklist_element = Blacklist.query.filter_by(
+            owner='owner@example.com',
+            email='owner@example.com'
+        ).first()
+        assert blacklist_element is None
         query_string = [('owner', 'owner@example.com'),
                         ('email', 'email@example.com')]
         response = self.client.open(
@@ -30,12 +46,12 @@ class TestDefaultController(BaseTestCase):
             query_string=query_string)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
-        query = Blacklist.query.filter_by(
+        blacklist_element = Blacklist.query.filter_by(
             owner='owner@example.com',
             email='email@example.com'
         ).first()
-        assert query is not None
-        db.session.delete(query)
+        assert blacklist_element is not None
+        db.session.delete(blacklist_element)
         db.session.commit()
 
     def test_check_blacklist(self):
@@ -225,6 +241,48 @@ class TestDefaultController(BaseTestCase):
                        'Response body is : ' + response.data.decode('utf-8'))
         # check that the message is gone
         assert (DB_Message.query.filter_by(id=dummy_id).first() is None)
+        # now do that again but mirrored
+        # create a message
+        dummy_msg = DB_Message()
+        dummy_msg.add_message(
+            "dummy delete message",
+            "sender@example.com",
+            "receiver@example.com",
+            "2025-01-01 12:00:00",
+            None,
+            None,
+            2,
+            True
+        )
+        db.session.add(dummy_msg)
+        db.session.commit()
+        dummy_id = dummy_msg.get_id()
+        # delete the message for receiver
+        query_string = [('email', 'receiver@example.com'),
+                        ('id', dummy_id)]
+        response = self.client.open(
+            '/message',
+            method='DELETE',
+            content_type='application/json',
+            query_string=query_string)
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # check that it's visible to sender but not receiver
+        message = DB_Message.query.filter_by(id=dummy_id).first()
+        assert not message.visible_to_receiver
+        assert message.visible_to_sender
+        # delete for sender too
+        query_string = [('email', 'sender@example.com'),
+                        ('id', dummy_id)]
+        response = self.client.open(
+            '/message',
+            method='DELETE',
+            content_type='application/json',
+            query_string=query_string)
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # check that the message is gone
+        assert (DB_Message.query.filter_by(id=dummy_id).first() is None)
 
     def test_edit_draft(self):
         """Test case for edit_draft
@@ -264,6 +322,79 @@ class TestDefaultController(BaseTestCase):
         draft = DB_Message.query.filter_by(id=dummy_id).first()
         assert draft.message == data.message
         db.session.delete(draft)
+        db.session.commit()
+
+    def test_bad_edit_draft(self):
+        """Test case for edit_draft
+
+                edit a draft
+                """
+        dummy_msg = DB_Message()
+        dummy_msg.add_message(
+            "dummy draft to edit",
+            "sender@example.com",
+            "receiver@example.com",
+            "2025-01-01 12:00:00",
+            "test_name",
+            "test_base64_value",
+            0,
+            True
+        )
+        db.session.add(dummy_msg)
+        db.session.commit()
+        dummy_id = dummy_msg.get_id()
+        data = Draft()
+        # sending too big an image
+        data.id = dummy_id
+        data.message = "edited draft"
+        data.sender_mail = "sender@example.com"
+        data.receiver_mail = "receiver@example.com"
+        data.time = "2025-01-01 12:00:00"
+        data.image_hash = ''
+        for i in range(10241):
+            data.image_hash += 'a'
+        response = self.client.open(
+            '/draft',
+            method='PUT',
+            data=json.dumps(data),
+            content_type='application/json')
+        self.assert400(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # requesting edit on non-existing id
+        data.id = 999
+        data.image = None
+        data.image_hash = None
+        response = self.client.open(
+            '/draft',
+            method='PUT',
+            data=json.dumps(data),
+            content_type='application/json')
+        self.assert400(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # requesting edit on non-owned message
+        data.id = dummy_id
+        data.sender_mail = "someoneelse@example.com"
+        response = self.client.open(
+            '/draft',
+            method='PUT',
+            data=json.dumps(data),
+            content_type='application/json')
+        self.assert400(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # requesting edit on non-draft item
+        data.sender_mail = "sender@example.com"
+        dummy_msg.status = 1
+        db.session.add(dummy_msg)
+        db.session.commit()
+        response = self.client.open(
+            '/draft',
+            method='PUT',
+            data=json.dumps(data),
+            content_type='application/json')
+        self.assert400(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        # cleanup
+        db.session.delete(dummy_msg)
         db.session.commit()
 
     def test_get_blacklist(self):
@@ -481,6 +612,80 @@ class TestDefaultController(BaseTestCase):
             db.session.delete(query_msg)
         db.session.commit()
 
+    def test_bad_send_message(self):
+        """
+        Test case for send_message errors
+
+        send a message
+        """
+        data = Message()
+        # image too big
+        data.message = "this is a test message"
+        data.sender_mail = "sender@example.com"
+        data.receiver_mail = "mail1@example.com, mail2@example.com"
+        data.time = "2025-01-01 12:00:00"
+        data.image = "sample_image.jpg"
+        image_hash_too_big = ''
+        for i in range(10241):
+            image_hash_too_big += 'a'
+        data.image_hash = image_hash_too_big
+        response = self.client.open(
+            '/message',
+            method='POST',
+            data=json.dumps(data),
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        sent_ids = response.json
+        assert -1 == sent_ids[0]
+        # wrong time
+        data.image_hash = "small"
+        data.time = "1980-01-01 12:00:00"
+        response = self.client.open(
+            '/message',
+            method='POST',
+            data=json.dumps(data),
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        sent_ids = response.json
+        assert -1 == sent_ids[0]
+        # blacklisted sender
+        # create a new blacklist entry
+        new_blacklist_element = Blacklist()
+        new_blacklist_element.add_blocked_user(
+            'email@example.com',
+            'sender@example.com'
+        )
+        db.session.add(new_blacklist_element)
+        db.session.commit()
+        # setup message
+        data.receiver_mail = "mail1@example.com, email@example.com"
+        data.time = "2025-01-01 12:00:00"
+        # send
+        response = self.client.open(
+            '/message',
+            method='POST',
+            data=json.dumps(data),
+            content_type='application/json')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+        sent_ids = response.json
+        # we expect to see the message we sent
+        for id in sent_ids:
+            assert id != -1
+        # but the receiver shouldn't be able to see the second message
+        invisible_message = DB_Message.query.filter_by(
+            receiver_email='email@example.com',
+            visible_to_receiver=False
+        ).first()
+        assert invisible_message is not None
+        # cleanup
+        db.session.delete(new_blacklist_element)
+        for id in sent_ids:
+            DB_Message.query.filter_by(id=id).delete()
+        db.session.commit()
+
     def test_set_as_read(self):
         """Test case for set_as_read
 
@@ -556,6 +761,11 @@ class TestDefaultController(BaseTestCase):
             content_type='application/json')
         self.assert404(response,
                        'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_send_null_id(self):
+        assert DB_Message.query.filter_by(id=0).first() is None
+        deliver_message(0)
+        assert DB_Message.query.filter_by(id=0).first() is None
 
 
 if __name__ == '__main__':

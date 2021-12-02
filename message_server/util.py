@@ -4,7 +4,7 @@ import six
 import typing
 
 
-def _deserialize(data, klass):
+def _deserialize(data, klass):  # pragma: no coverage
     """Deserializes dict, list, str into an object.
 
     :param data: dict, list or str.
@@ -32,7 +32,7 @@ def _deserialize(data, klass):
         return deserialize_model(data, klass)
 
 
-def _deserialize_primitive(data, klass):
+def _deserialize_primitive(data, klass):  # pragma: no coverage
     """Deserializes to primitive type.
 
     :param data: data to deserialize.
@@ -50,7 +50,7 @@ def _deserialize_primitive(data, klass):
     return value
 
 
-def _deserialize_object(value):
+def _deserialize_object(value):  # pragma: no coverage
     """Return a original value.
 
     :return: object.
@@ -58,7 +58,7 @@ def _deserialize_object(value):
     return value
 
 
-def deserialize_date(string):
+def deserialize_date(string):  # pragma: no coverage
     """Deserializes string to date.
 
     :param string: str.
@@ -73,7 +73,7 @@ def deserialize_date(string):
         return string
 
 
-def deserialize_datetime(string):
+def deserialize_datetime(string):  # pragma: no coverage
     """Deserializes string to datetime.
 
     The string should be in iso8601 datetime format.
@@ -90,7 +90,7 @@ def deserialize_datetime(string):
         return string
 
 
-def deserialize_model(data, klass):
+def deserialize_model(data, klass):  # pragma: no coverage
     """Deserializes list or dict to model.
 
     :param data: dict, list.
@@ -113,7 +113,7 @@ def deserialize_model(data, klass):
     return instance
 
 
-def _deserialize_list(data, boxed_type):
+def _deserialize_list(data, boxed_type):  # pragma: no coverage
     """Deserializes a list and its elements.
 
     :param data: list to deserialize.
@@ -127,7 +127,7 @@ def _deserialize_list(data, boxed_type):
             for sub_data in data]
 
 
-def _deserialize_dict(data, boxed_type):
+def _deserialize_dict(data, boxed_type):  # pragma: no coverage
     """Deserializes a dict and its elements.
 
     :param data: dict to deserialize.

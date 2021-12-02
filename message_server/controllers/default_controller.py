@@ -139,31 +139,28 @@ def edit_draft(data):  # noqa: E501
     """
     if connexion.request.is_json:
         data = Draft.from_dict(connexion.request.get_json())  # noqa: E501
-        # always true
-        if data.id is not None:
-            try:
-                message = DB_Message.query.filter_by(
-                    id=data.id,
-                    status=0
-                ).one()
-            except NoResultFound:
-                return None, 400
-            if data.image_hash is not None and data.image_hash != '' and \
-                    len(data.image_hash) > 10240:
-                return None, 400
-            message.add_message(
-                data.message,
-                data.sender_mail,
-                data.receiver_mail,
-                data.time,
-                data.image,
-                data.image_hash,
-                0,
-                True
-            )
-            db.session.commit()
-        else:
+        try:
+            message = DB_Message.query.filter_by(
+                id=data.id,
+                sender_email=data.sender_mail,
+                status=0
+            ).one()
+        except NoResultFound:
             return None, 400
+        if data.image_hash is not None and data.image_hash != '' and \
+                len(data.image_hash) > 10240:
+            return None, 400
+        message.add_message(
+            data.message,
+            data.sender_mail,
+            data.receiver_mail,
+            data.time,
+            data.image,
+            data.image_hash,
+            0,
+            True
+        )
+        db.session.commit()
     return None, 200
 
 
@@ -303,7 +300,7 @@ def send_message(data):  # noqa: E501
                 # content filter is checked on read by the gateway
                 message = DB_Message()
                 # check blacklist
-                if bl.is_blacklisted(data.sender_mail, data.receiver_mail):
+                if bl.is_blacklisted(data.sender_mail, address):
                     visible_to_receiver = False
                 else:
                     visible_to_receiver = True

@@ -22,6 +22,6 @@ def main():
     return app
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no coverage
     app = main()
     app.run(port=4000)

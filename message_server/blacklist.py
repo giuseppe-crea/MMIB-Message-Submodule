@@ -16,8 +16,9 @@ def _check_itself(user, email):
 
 
 def _check_add_blacklist(user, email):
-    return not _check_already_blocked(user, email) or \
-           not _check_itself(user, email)
+    itself = _check_itself(user, email)
+    blocked = _check_already_blocked(user, email)
+    return not itself and not blocked
 
 
 def add2blacklist_local(user, email):
@@ -37,10 +38,7 @@ def is_blacklisted(sender, receiver):
 
 
 def blacklist_for_user(owner):
-    try:
-        receivers = Blacklist.query.filter(Blacklist.owner == owner)
-    except NoResultFound:
-        return []
+    receivers = Blacklist.query.filter(Blacklist.owner == owner)
     total_receivers = []
     if receivers is not None:
         for row in receivers:
