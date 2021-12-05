@@ -1,0 +1,10 @@
+FROM python:3.9-alpine
+WORKDIR /code
+ADD . /code
+ENV DOCKER=yes
+ENV TZ=Europe/Rome
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apk add build-base
+RUN apk add git
+RUN pip install -r requirements.txt
+CMD ["celery", "-A", "message_server.tasks.celery", "worker", "-l", "INFO"]

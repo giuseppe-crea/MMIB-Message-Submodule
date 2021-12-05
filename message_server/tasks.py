@@ -1,10 +1,15 @@
+import os
+
 from celery import Celery
 from sqlalchemy.orm.exc import NoResultFound
 
 from message_server.database import db, Message
 
 
-BACKEND = BROKER = 'redis://localhost:6379/0'
+if os.environ.get('DOCKER') is not None:
+    BACKEND = BROKER = 'redis://redis_messages:6379/0'
+else:
+    BACKEND = BROKER = 'redis://localhost:6379/0'
 celery = Celery(__name__, backend=BACKEND, broker=BROKER)
 _APP = None
 

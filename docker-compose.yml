@@ -1,0 +1,23 @@
+version: '3.9'
+services:
+  mib_messages:
+    container_name: message_microservice
+    build:
+      context: ../MMIB-Message-Submodule
+      dockerfile: ../MMIB-Message-Submodule/Dockerfile
+    ports:
+      - "5007:5007"
+  redis_messages:
+    container_name: redis_messages
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+  celery_messages:
+    container_name: celery_messages
+    build:
+      context: ../MMIB-Message-Submodule
+      dockerfile: ../MMIB-Message-Submodule/DockerfileCelery
+    depends_on:
+      - redis_messages
+    links:
+      - redis_messages

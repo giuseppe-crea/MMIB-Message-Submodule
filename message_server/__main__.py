@@ -12,6 +12,7 @@ _APP = None
 def main():
     global _APP
     app = connexion.App(__name__, specification_dir='./swagger/')
+
     _APP = app.app
     _APP.json_encoder = encoder.JSONEncoder
     app.add_api('swagger.yaml', arguments={'title': 'Messages'})
@@ -24,4 +25,4 @@ def main():
 
 if __name__ == '__main__':  # pragma: no coverage
     app = main()
-    app.run(port=4000)
+    app.run(port=5007)
