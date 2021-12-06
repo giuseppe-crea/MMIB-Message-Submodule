@@ -6,12 +6,13 @@ services:
       context: ../MMIB-Message-Submodule
       dockerfile: ../MMIB-Message-Submodule/Dockerfile
     ports:
-      - "5007:5007"
+      - "5002:5002"
   redis_messages:
     container_name: redis_messages
     image: "redis:alpine"
+    command: --port 6378
     ports:
-      - "6379:6379"
+      - "6378:6378"
   celery_messages:
     container_name: celery_messages
     build:

@@ -25,4 +25,4 @@ def main():
 
 if __name__ == '__main__':  # pragma: no coverage
     app = main()
-    app.run(port=5007)
+    app.run(port=5002)

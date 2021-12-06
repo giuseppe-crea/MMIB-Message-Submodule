@@ -7,7 +7,7 @@ from message_server.database import db, Message
 
 
 if os.environ.get('DOCKER') is not None:
-    BACKEND = BROKER = 'redis://redis_messages:6379/0'
+    BACKEND = BROKER = 'redis://redis_messages:6378/0'
 else:
     BACKEND = BROKER = 'redis://localhost:6379/0'
 celery = Celery(__name__, backend=BACKEND, broker=BROKER)
