@@ -62,7 +62,7 @@ def create_draft(data):  # noqa: E501
     if connexion.request.is_json:
         data = Message.from_dict(connexion.request.get_json())  # noqa: E501
         if data.image_hash is not None and data.image_hash != '' and \
-                len(data.image_hash) > 10240:
+                len(data.image_hash) > 102400000:
             return None, 400
         message = DB_Message()
         message.add_message(
@@ -148,7 +148,7 @@ def edit_draft(data):  # noqa: E501
         except NoResultFound:
             return None, 400
         if data.image_hash is not None and data.image_hash != '' and \
-                len(data.image_hash) > 10240:
+                len(data.image_hash) > 102400000:
             return None, 400
         message.add_message(
             data.message,
@@ -291,7 +291,7 @@ def send_message(data):  # noqa: E501
         if time_aware >= minute_precision:
             # checks on the validity of data.image happen within Message object
             if data.image_hash is not None and data.image_hash != '' and \
-                    len(data.image_hash) > 10240:
+                    len(data.image_hash) > 102400000:
                 return [-1]
             to_parse = data.receiver_mail.split(',')
             for address in to_parse:
