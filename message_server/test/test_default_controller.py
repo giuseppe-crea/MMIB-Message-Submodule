@@ -583,7 +583,7 @@ class TestDefaultController(BaseTestCase):
         # trust the network smells but works
         data.message = "this is a test message"
         data.sender_mail = "sender@example.com"
-        data.receiver_mail = "mail1@example.com, mail2@example.com"
+        data.receiver_mail = "mail1@example.com"
         data.time = "2025-01-01 12:00:00"
         data.image = "sample_image.jpg"
         data.image_hash = "small_image_encoded_in_base_64"
