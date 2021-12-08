@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from message_server.models.draft import Draft  # noqa: E501
 from message_server.models.message import Message  # noqa: E501
-from message_server import util
+from message_server.util import eprint
 from message_server.tasks import deliver_message
 import message_server.blacklist as bl
 from message_server.database import Message as DB_Message, db
@@ -62,7 +62,7 @@ def create_draft(data):  # noqa: E501
     if connexion.request.is_json:
         data = Message.from_dict(connexion.request.get_json())  # noqa: E501
         if data.image_hash is not None and data.image_hash != '' and \
-                len(data.image_hash) > 102400000:
+                len(data.image_hash) > 2000000:
             return None, 400
         message = DB_Message()
         message.add_message(
@@ -148,7 +148,7 @@ def edit_draft(data):  # noqa: E501
         except NoResultFound:
             return None, 400
         if data.image_hash is not None and data.image_hash != '' and \
-                len(data.image_hash) > 102400000:
+                len(data.image_hash) > 2000000:
             return None, 400
         message.add_message(
             data.message,
@@ -194,7 +194,9 @@ def query_wrangler(query):
                 row.message,
                 row.time,
                 row.image,
-                row.image_hash
+                row.image_hash,
+                row.status,
+                row.is_read
             )
             reply.append(reply_row)
         return jsonify(reply)
@@ -290,9 +292,10 @@ def send_message(data):  # noqa: E501
         ).replace(second=0, microsecond=0)
         if time_aware >= minute_precision:
             # checks on the validity of data.image happen within Message object
+            # this was also checked in the gateway
             if data.image_hash is not None and data.image_hash != '' and \
-                    len(data.image_hash) > 102400000:
-                return [-1]
+                    len(data.image_hash) > 2000000:
+                return None, 400
             to_parse = data.receiver_mail.split(',')
             for address in to_parse:
                 address = address.strip()
@@ -317,12 +320,10 @@ def send_message(data):  # noqa: E501
                 db.session.add(message)
                 db.session.commit()
                 sent.append(message.get_id())
-                deliver_message.apply_async(
-                    (message.get_id(),),
-                    eta=time_aware
-                )
+                deliver_message.apply_async(args=[message.get_id()],
+                                            eta=time_aware)
         else:
-            sent = [-1]
+            sent = [-3]
     return sent
 
 

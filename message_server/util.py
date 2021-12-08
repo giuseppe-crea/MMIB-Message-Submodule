@@ -1,7 +1,13 @@
+from __future__ import print_function
 import datetime
 
 import six
 import typing
+import sys
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 def _deserialize(data, klass):  # pragma: no coverage

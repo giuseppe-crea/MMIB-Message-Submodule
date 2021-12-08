@@ -308,8 +308,12 @@ definitions:
         type: "string"
       image:
         type: "string"
-      image_encoded:
+      image_hash:
         type: "string"
+      status:
+        type: "integer"
+      is_read:
+        type: "boolean"
     description: "An object representing a message."
     example:
       image: "filename.ext"

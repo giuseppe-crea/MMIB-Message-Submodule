@@ -1,9 +1,9 @@
 import os
 
 from celery import Celery
-from sqlalchemy.orm.exc import NoResultFound
 
 from message_server.database import db, Message
+from message_server.util import eprint
 
 
 if os.environ.get('DOCKER') is not None:
@@ -27,9 +27,10 @@ def deliver_message(message_id):
     with _APP.app_context():
         # find the message with that given id
         try:
-            message = Message().query.filter_by(id=int(message_id)).one()
-            message.status = 2
+            db.session.query(Message).filter(
+                Message.id == message_id).update(dict(status=2))
             db.session.commit()
-        except NoResultFound:
+        except Exception as e:
+            eprint(str(e))
             pass  # this means the message was retracted
     return 0

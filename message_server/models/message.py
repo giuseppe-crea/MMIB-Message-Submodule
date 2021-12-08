@@ -18,7 +18,8 @@ class Message(Model):
     def __init__(self, id: int = None, sender_mail: str = None,
                  receiver_mail: str = None, message: str = None,
                  time: str = None, image: str = None,
-                 image_hash: str = None):  # noqa: E501
+                 image_hash: str = None, status: int = None,
+                 is_read: bool = None):  # noqa: E501
         """Message - a model defined in Swagger
 
         :param id: The id of this Message.  # noqa: E501
@@ -35,6 +36,10 @@ class Message(Model):
         :type image: str
         :param image_hash: The base64 encoding of the image file
         :type image_hash: str
+        :param status: The status [0, 1, 2] of this message
+        :type status: int
+        :param is_read: Whether or not this message was read by the receiver
+        :type is_read: boolean
         """
         self.swagger_types = {
             'id': int,
@@ -43,7 +48,9 @@ class Message(Model):
             'message': str,
             'time': str,
             'image': str,
-            'image_hash': str
+            'image_hash': str,
+            'status': int,
+            'is_read': bool
         }
 
         self.attribute_map = {
@@ -53,7 +60,9 @@ class Message(Model):
             'message': 'message',
             'time': 'time',
             'image': 'image',
-            'image_hash': 'image_hash'
+            'image_hash': 'image_hash',
+            'status': 'status',
+            'is_read': 'is_read'
         }
 
         self._id = id
@@ -63,6 +72,8 @@ class Message(Model):
         self._time = time
         self._image = image
         self._image_hash = image_hash
+        self._status = status
+        self._is_read = is_read
 
     @classmethod
     def from_dict(cls, dikt) -> 'Message':
@@ -223,5 +234,46 @@ class Message(Model):
         :param image_hash: The image_hash of this Message.
         :type image_hash: str
         """
-
         self._image_hash = image_hash
+
+    @property
+    def status(self) -> int:
+        """Gets the status of this Message.
+
+
+        :return: The status of this Message.
+        :rtype: str
+        """
+        return self._status
+
+    @status.setter
+    def status(self, status: int):
+        """Sets the image_hash of this Message.
+
+
+        :param status: The image_hash of this Message.
+        :type status: int
+        """
+
+        self._status = status
+
+    @property
+    def is_read(self) -> bool:
+        """Gets the image_hash of this Message.
+
+
+        :return: The is_read of this Message.
+        :rtype: bool
+        """
+        return self._is_read
+
+    @is_read.setter
+    def is_read(self, is_read: bool):
+        """Sets the image_hash of this Message.
+
+
+        :param is_read: The image_hash of this Message.
+        :type is_read: bool
+        """
+
+        self._is_read = is_read
