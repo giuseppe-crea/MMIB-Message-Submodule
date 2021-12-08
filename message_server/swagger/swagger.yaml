@@ -308,7 +308,7 @@ definitions:
         type: "string"
       image:
         type: "string"
-      image_encoded:
+      image_hash:
         type: "string"
       status:
         type: "integer"

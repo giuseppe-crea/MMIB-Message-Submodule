@@ -14,7 +14,7 @@ class Message(db.Model):
     # format: "%Y-%M-%D %H:%M:%s" on GMT+1
     time = db.Column(db.Unicode(128), nullable=False)
     image = db.Column(db.Unicode(1024), nullable=False)
-    image_hash = db.Column(db.Unicode(102400000), nullable=True)
+    image_hash = db.Column(db.Unicode(2000000), nullable=True)
     # 0 draft, 1 sent, 2 delivered
     status = db.Column(db.Integer, nullable=False)
     # two columns: visible to sender, visible to receiver, for deletion
