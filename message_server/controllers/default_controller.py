@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from message_server.models.draft import Draft  # noqa: E501
 from message_server.models.message import Message  # noqa: E501
-from message_server import util
+from message_server.util import eprint
 from message_server.tasks import deliver_message
 import message_server.blacklist as bl
 from message_server.database import Message as DB_Message, db
@@ -194,8 +194,11 @@ def query_wrangler(query):
                 row.message,
                 row.time,
                 row.image,
-                row.image_hash
+                row.image_hash,
+                row.status,
+                row.is_read
             )
+            eprint("Adding the following message: ", str(reply_row))
             reply.append(reply_row)
         return jsonify(reply)
 
@@ -317,10 +320,13 @@ def send_message(data):  # noqa: E501
                 db.session.add(message)
                 db.session.commit()
                 sent.append(message.get_id())
-                deliver_message.apply_async(
-                    (message.get_id(),),
-                    eta=time_aware
-                )
+                eprint("Message id is: " + str(message.get_id()))
+                message_db = DB_Message().query.filter_by(id=int(message.get_id())).first()
+                if message_db is None:
+                    eprint("ERROR! Message not in database!")
+                else:
+                    eprint("Message in db with id " + str(message_db.id))
+                deliver_message.apply_async(args=[message.get_id()], eta=time_aware)
         else:
             sent = [-1]
     return sent

@@ -310,6 +310,10 @@ definitions:
         type: "string"
       image_encoded:
         type: "string"
+      status:
+        type: "integer"
+      is_read:
+        type: "boolean"
     description: "An object representing a message."
     example:
       image: "filename.ext"
