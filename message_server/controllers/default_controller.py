@@ -92,8 +92,11 @@ def delete_draft(id):  # noqa: E501
 
     :rtype: None
     """
+    eprint("Entering delete draft with id " + str(id))
     DB_Message.query.filter_by(id=id).delete()
+    eprint("Delete draft about to commit")
     db.session.commit()
+    eprint("done!")
 
     return None, 200
 
