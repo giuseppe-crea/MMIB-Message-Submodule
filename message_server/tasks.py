@@ -1,7 +1,6 @@
 import os
 
 from celery import Celery
-from sqlalchemy.orm.exc import NoResultFound
 
 from message_server.database import db, Message
 from message_server.util import eprint
@@ -34,9 +33,6 @@ def deliver_message(message_id):
             # message.status = 2
             # db.session.add(message)
             db.session.commit()
-            eprint("Commit for message with id " + str(message_id) + " complete.")
-            message = Message().query.filter_by(id=int(message_id)).first()
-            eprint("Message with id" + str(message.get_id()) + " has status " + str(message.status))
         except Exception as e:
             eprint(str(e))
             pass  # this means the message was retracted

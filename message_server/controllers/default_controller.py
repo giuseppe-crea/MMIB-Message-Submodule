@@ -198,7 +198,6 @@ def query_wrangler(query):
                 row.status,
                 row.is_read
             )
-            eprint("Adding the following message: ", str(reply_row))
             reply.append(reply_row)
         return jsonify(reply)
 
@@ -320,13 +319,8 @@ def send_message(data):  # noqa: E501
                 db.session.add(message)
                 db.session.commit()
                 sent.append(message.get_id())
-                eprint("Message id is: " + str(message.get_id()))
-                message_db = DB_Message().query.filter_by(id=int(message.get_id())).first()
-                if message_db is None:
-                    eprint("ERROR! Message not in database!")
-                else:
-                    eprint("Message in db with id " + str(message_db.id))
-                deliver_message.apply_async(args=[message.get_id()], eta=time_aware)
+                deliver_message.apply_async(args=[message.get_id()],
+                                            eta=time_aware)
         else:
             sent = [-1]
     return sent
