@@ -27,11 +27,8 @@ def deliver_message(message_id):
     with _APP.app_context():
         # find the message with that given id
         try:
-            # message = Message().query.filter_by(id=int(message_id)).one()
             db.session.query(Message).filter(
                 Message.id == message_id).update(dict(status=2))
-            # message.status = 2
-            # db.session.add(message)
             db.session.commit()
         except Exception as e:
             eprint(str(e))
