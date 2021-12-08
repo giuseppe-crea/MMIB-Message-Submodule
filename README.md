@@ -1,3 +1,25 @@
+# MMIB-Message-Submodule
+Message Submodule implementation for the microservices-based application MMIB. 
+This is the source code of Message in a Bottle application, self project of *Advanced Software Engineering* course,
+University of Pisa.
+
+
+
+## Team info
+
+- The *squad id* is **10**
+- The *team leader* is Giuseppe Crea
+
+#### Members
+
+| Name and Surname  | Email |
+| ----------------  | ----- |
+|Giuseppe Crea      |g.crea2@studenti.unipi.it       |
+|Francesco Venturini|f.venturini12@studenti.unipi.it|
+|Ivan Sarno         |       |
+|Francesco Gargiulo |       |
+|                   |       |
+
 # Swagger generated server
 
 ## Overview
@@ -47,3 +69,18 @@ docker build -t message_server .
 # starting up a container
 docker run -p 5002:5002 message_server
 ```
+
+## Testing
+
+Start a redis server on localhost:6379. This is needed to test the celery calls.
+Place yourself in the home directory of this project and run the command
+
+```
+pytest --cov=message_server --cov-report=html
+```
+
+This will run pytest and generate coverage documentation.
+
+## CI
+
+Travis.ci is currently refusing new builds from all accounts in our team. Thus, no CI pipeline was set up.

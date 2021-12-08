@@ -295,7 +295,7 @@ def send_message(data):  # noqa: E501
             # this was also checked in the gateway
             if data.image_hash is not None and data.image_hash != '' and \
                     len(data.image_hash) > 2000000:
-                return [-1]
+                return None, 400
             to_parse = data.receiver_mail.split(',')
             for address in to_parse:
                 address = address.strip()
@@ -323,7 +323,7 @@ def send_message(data):  # noqa: E501
                 deliver_message.apply_async(args=[message.get_id()],
                                             eta=time_aware)
         else:
-            sent = [-1]
+            sent = [-3]
     return sent
 
 

@@ -124,7 +124,7 @@ class TestDefaultController(BaseTestCase):
         assert (saved_draft.status == 0)
         # test 400: image_hash is too big
         image_hash_too_big = ''
-        for i in range(10241):
+        for i in range(2000001):
             image_hash_too_big += 'a'
         data.image_hash = image_hash_too_big
         response = self.client.open(
@@ -350,9 +350,10 @@ class TestDefaultController(BaseTestCase):
         data.sender_mail = "sender@example.com"
         data.receiver_mail = "receiver@example.com"
         data.time = "2025-01-01 12:00:00"
-        data.image_hash = ''
-        for i in range(10241):
-            data.image_hash += 'a'
+        image_hash_too_big = ''
+        for i in range(2000001):
+            image_hash_too_big += 'a'
+        data.image_hash = image_hash_too_big
         response = self.client.open(
             '/draft',
             method='PUT',
@@ -626,7 +627,7 @@ class TestDefaultController(BaseTestCase):
         data.time = "2025-01-01 12:00:00"
         data.image = "sample_image.jpg"
         image_hash_too_big = ''
-        for i in range(10241):
+        for i in range(2000001):
             image_hash_too_big += 'a'
         data.image_hash = image_hash_too_big
         response = self.client.open(
@@ -634,10 +635,8 @@ class TestDefaultController(BaseTestCase):
             method='POST',
             data=json.dumps(data),
             content_type='application/json')
-        self.assert200(response,
+        self.assert400(response,
                        'Response body is : ' + response.data.decode('utf-8'))
-        sent_ids = response.json
-        assert -1 == sent_ids[0]
         # wrong time
         data.image_hash = "small"
         data.time = "1980-01-01 12:00:00"
@@ -649,7 +648,7 @@ class TestDefaultController(BaseTestCase):
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
         sent_ids = response.json
-        assert -1 == sent_ids[0]
+        assert -3 == sent_ids[0]
         # blacklisted sender
         # create a new blacklist entry
         new_blacklist_element = Blacklist()
