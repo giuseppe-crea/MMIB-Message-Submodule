@@ -319,7 +319,10 @@ def send_message(data):  # noqa: E501
                 )
                 db.session.add(message)
                 db.session.commit()
-                sent.append(message.get_id())
+                if visible_to_receiver:
+                    sent.append(message.get_id())
+                else:
+                    sent.append(-2)
                 deliver_message.apply_async(args=[message.get_id()],
                                             eta=time_aware)
         else:
