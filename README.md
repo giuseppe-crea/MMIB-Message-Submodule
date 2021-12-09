@@ -76,10 +76,10 @@ Start a redis server on localhost:6379. This is needed to test the celery calls.
 Place yourself in the home directory of this project and run the command
 
 ```
-pytest --cov=message_server --cov-report=html
+tox
 ```
 
-This will run pytest and generate coverage documentation.
+This will run pytest and return coverage data.
 
 ## CI
 
