@@ -340,7 +340,7 @@ definitions:
         type: "string"
       image:
         type: "string"
-      image_encoded:
+      image_hash:
         type: "string"
     description: "An object representing a draft, it is a version of Message used\
       \ for editing."
